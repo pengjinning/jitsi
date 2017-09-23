@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.jitsi</groupId>
     <artifactId>jitsi</artifactId>
-    <version>2.9-SNAPSHOT</version>
+    <version>2.11-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -21,6 +21,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-configuration</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 

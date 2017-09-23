@@ -17,16 +17,26 @@
  */
 package net.java.sip.communicator.impl.osdependent.systemtray;
 
+import java.awt.*;
+
 import javax.swing.*;
 
+import org.jitsi.util.*;
+
+import net.java.sip.communicator.impl.osdependent.*;
+import net.java.sip.communicator.impl.osdependent.systemtray.appindicator.*;
 import net.java.sip.communicator.impl.osdependent.systemtray.awt.*;
+import net.java.sip.communicator.service.systray.*;
+import net.java.sip.communicator.util.Logger;
 
 /**
  * Base class for all wrappers of <tt>SystemTray</tt> implementations.
  */
 public abstract class SystemTray
 {
+    private static final Logger logger = Logger.getLogger(SystemTray.class);
     private static SystemTray systemTray;
+    private static final String DISABLED_TRAY_MODE = "disabled";
 
     /**
      * Gets or creates the supported <tt>SystemTray</tt> implementations.
@@ -36,13 +46,74 @@ public abstract class SystemTray
     {
         if (systemTray == null)
         {
-            if (java.awt.SystemTray.isSupported())
+            String mode = getSystemTrayMode();
+            logger.info("Tray for " + mode + " requested");
+            switch (mode)
             {
-                systemTray = new AWTSystemTray();
+            case DISABLED_TRAY_MODE:
+                return null;
+            case "native":
+                if (java.awt.SystemTray.isSupported())
+                {
+                    systemTray = new AWTSystemTray();
+                }
+
+                break;
+            case "appindicator":
+                try
+                {
+                    systemTray = new AppIndicatorTray(true);
+                }
+                catch(Exception ex)
+                {
+                    logger.error("AppIndicator tray not available", ex);
+                }
+                break;
+            case "appindicator_static":
+                try
+                {
+                    systemTray = new AppIndicatorTray(false);
+                }
+                catch(Exception ex)
+                {
+                    logger.error("AppIndicator tray not available", ex);
+                }
+
+                break;
+            }
+
+            if (systemTray == null)
+            {
+                OsDependentActivator.getConfigurationService()
+                    .setProperty(SystrayService.PNMAE_TRAY_MODE, "disabled");
             }
         }
 
         return systemTray;
+    }
+
+    public static String getSystemTrayMode()
+    {
+        String defaultTrayMode = DISABLED_TRAY_MODE;
+        if (GraphicsEnvironment.isHeadless())
+        {
+            return DISABLED_TRAY_MODE;
+        }
+
+        // setting from cmd-line: request to disable tray in case it failed
+        if (Boolean.getBoolean("disable-tray"))
+        {
+            OsDependentActivator.getConfigurationService().setProperty(
+                SystrayService.PNMAE_TRAY_MODE, DISABLED_TRAY_MODE);
+        }
+
+        if (OSUtils.IS_WINDOWS || OSUtils.IS_MAC)
+        {
+            defaultTrayMode = "native";
+        }
+
+        return OsDependentActivator.getConfigurationService()
+            .getString(SystrayService.PNMAE_TRAY_MODE, defaultTrayMode);
     }
 
     /**
@@ -75,4 +146,11 @@ public abstract class SystemTray
      *         <tt>PopupMenu</tt>
      */
     public abstract boolean useSwingPopupMenu();
+
+    /**
+     * Determines if the tray icon supports dynamic menus.
+     * 
+     * @return True if the menu can be changed while running, false otherwise.
+     */
+    public abstract boolean supportsDynamicMenu();
 }

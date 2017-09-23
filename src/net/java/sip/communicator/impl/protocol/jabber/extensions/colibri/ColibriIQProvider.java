@@ -72,6 +72,11 @@ public class ColibriIQProvider
                 SourceGroupPacketExtension.NAMESPACE,
                 new DefaultPacketExtensionProvider<SourceGroupPacketExtension>(
                         SourceGroupPacketExtension.class));
+        smackInteroperabilityLayer.addExtensionProvider(
+                SourceRidGroupPacketExtension.ELEMENT_NAME,
+                SourceRidGroupPacketExtension.NAMESPACE,
+                new DefaultPacketExtensionProvider<SourceRidGroupPacketExtension>(
+                        SourceRidGroupPacketExtension.class));
 
         PacketExtensionProvider parameterProvider
                 = new DefaultPacketExtensionProvider<ParameterPacketExtension>(
@@ -261,6 +266,12 @@ public class ColibriIQProvider
             if ((conferenceID != null) && (conferenceID.length() != 0))
                 conference.setID(conferenceID);
 
+            String conferenceGID = parser
+                .getAttributeValue("", ColibriConferenceIQ.GID_ATTR_NAME);
+
+            if ((conferenceGID != null) && (conferenceGID.length() != 0))
+                conference.setGID(conferenceGID);
+
             String conferenceName = parser
                 .getAttributeValue("", ColibriConferenceIQ.NAME_ATTR_NAME);
 
@@ -277,7 +288,7 @@ public class ColibriIQProvider
             ColibriConferenceIQ.Recording recording = null;
             ColibriConferenceIQ.Endpoint conferenceEndpoint = null;
             StringBuilder ssrc = null;
-            SourcePacketExtension ssrcPe = null;
+            SourcePacketExtension sourcePacketExtension = null;
 
             while (!done)
             {
@@ -345,12 +356,12 @@ public class ColibriIQProvider
                     }
                     else if (SourcePacketExtension.ELEMENT_NAME.equals(name))
                     {
-                        if (channel != null && ssrcPe != null)
+                        if (channel != null && sourcePacketExtension != null)
                         {
-                            channel.addSource(ssrcPe);
+                            channel.addSource(sourcePacketExtension);
                         }
 
-                        ssrcPe = null;
+                        sourcePacketExtension = null;
                     }
                     else if (ColibriConferenceIQ.Content.ELEMENT_NAME.equals(
                             name))
@@ -385,7 +396,19 @@ public class ColibriIQProvider
 
                     if (ColibriConferenceIQ.Channel.ELEMENT_NAME.equals(name))
                     {
-                        channel = new ColibriConferenceIQ.Channel();
+                        String type
+                            = parser.getAttributeValue(
+                                    "",
+                                    ColibriConferenceIQ.Channel.TYPE_ATTR_NAME);
+
+                        if (ColibriConferenceIQ.OctoChannel.TYPE.equals(type))
+                        {
+                            channel = new ColibriConferenceIQ.OctoChannel();
+                        }
+                        else
+                        {
+                            channel = new ColibriConferenceIQ.Channel();
+                        }
 
                         // direction
                         String direction
@@ -463,7 +486,9 @@ public class ColibriIQProvider
                                             .INITIATOR_ATTR_NAME);
 
                         if ((initiator != null) && (initiator.length() != 0))
+                        {
                             channel.setInitiator(Boolean.valueOf(initiator));
+                        }
 
                         // lastN
                         String lastN
@@ -473,28 +498,8 @@ public class ColibriIQProvider
                                             .LAST_N_ATTR_NAME);
 
                         if ((lastN != null) && (lastN.length() != 0))
-                            channel.setLastN(Integer.parseInt(lastN));
-
-                        String adaptiveLastN
-                            = parser.getAttributeValue(
-                                    "",
-                                    ColibriConferenceIQ.Channel
-                                            .ADAPTIVE_LAST_N_ATTR_NAME);
-
-                        if (!StringUtils.isNullOrEmpty(adaptiveLastN))
-                            channel.setAdaptiveLastN(
-                                    Boolean.parseBoolean(adaptiveLastN));
-
-                        String adaptiveSimulcast
-                            = parser.getAttributeValue(
-                                    "",
-                                    ColibriConferenceIQ.Channel
-                                            .ADAPTIVE_SIMULCAST_ATTR_NAME);
-
-                        if (!StringUtils.isNullOrEmpty(adaptiveSimulcast))
                         {
-                            channel.setAdaptiveSimulcast(
-                                    Boolean.parseBoolean(adaptiveSimulcast));
+                            channel.setLastN(Integer.parseInt(lastN));
                         }
 
                         // simulcastMode
@@ -505,8 +510,10 @@ public class ColibriIQProvider
                                         .SIMULCAST_MODE_ATTR_NAME);
 
                         if (!StringUtils.isNullOrEmpty(simulcastMode))
+                        {
                             channel.setSimulcastMode(
                                     SimulcastMode.fromString(simulcastMode));
+                        }
 
                         // receiving simulcast layer
                         String receivingSimulcastLayer
@@ -528,7 +535,9 @@ public class ColibriIQProvider
                                             .RTCP_PORT_ATTR_NAME);
 
                         if ((rtcpPort != null) && (rtcpPort.length() != 0))
+                        {
                             channel.setRTCPPort(Integer.parseInt(rtcpPort));
+                        }
 
                         // rtpLevelRelayType
                         String rtpLevelRelayType
@@ -551,7 +560,9 @@ public class ColibriIQProvider
                                             .RTP_PORT_ATTR_NAME);
 
                         if ((rtpPort != null) && (rtpPort.length() != 0))
+                        {
                             channel.setRTPPort(Integer.parseInt(rtpPort));
+                        }
                     }
                     else if (ColibriConferenceIQ.ChannelBundle
                             .ELEMENT_NAME.equals(name))
@@ -586,6 +597,21 @@ public class ColibriIQProvider
                             rtcpTerminationStrategy.setName(strategyName);
 
                     }
+                    else if (ColibriConferenceIQ.OctoChannel
+                                    .RELAY_ELEMENT_NAME.equals(name))
+                    {
+                        String id
+                            = parser.getAttributeValue(
+                                    "",
+                                    ColibriConferenceIQ.OctoChannel.RELAY_ID_ATTR_NAME);
+
+                        if (id != null &&
+                            channel instanceof ColibriConferenceIQ.OctoChannel)
+                        {
+                            ((ColibriConferenceIQ.OctoChannel) channel)
+                                .addRelay(id);
+                        }
+                    }
                     else if (ColibriConferenceIQ.Channel.SSRC_ELEMENT_NAME
                             .equals(name))
                     {
@@ -593,16 +619,12 @@ public class ColibriIQProvider
                     }
                     else if (SourcePacketExtension.ELEMENT_NAME.equals(name))
                     {
-                        ssrcPe = new SourcePacketExtension();
-
-                        String ssrcStr
-                            = parser.getAttributeValue(
-                                    "",
-                                    SourcePacketExtension.SSRC_ATTR_NAME);
-
-                        if (!StringUtils.isNullOrEmpty(ssrcStr))
+                        sourcePacketExtension = new SourcePacketExtension();
+                        for (int i = 0; i < parser.getAttributeCount(); ++i)
                         {
-                            ssrcPe.setSSRC(Long.parseLong(ssrcStr));
+                            String attrName = parser.getAttributeName(i);
+                            String attrValue = parser.getAttributeValue(i);
+                            sourcePacketExtension.setAttribute(attrName, attrValue);
                         }
                     }
                     else if (ColibriConferenceIQ.Content.ELEMENT_NAME.equals(
@@ -800,6 +822,14 @@ public class ColibriIQProvider
                             peName = name;
                             peNamespace = SourceGroupPacketExtension.NAMESPACE;
                         }
+                        else if (SourceRidGroupPacketExtension.ELEMENT_NAME
+                                                .equals(name)
+                                && SourceRidGroupPacketExtension.NAMESPACE
+                                                .equals(parser.getNamespace()))
+                        {
+                            peName = name;
+                            peNamespace = SourceRidGroupPacketExtension.NAMESPACE;
+                        }
                         if (peName == null)
                         {
                             throwAway(parser, name);
@@ -812,12 +842,18 @@ public class ColibriIQProvider
                             if (extension != null)
                             {
                                 if(channel != null)
+                                {
                                     addChildExtension(channel, extension);
+                                }
                                 else if (sctpConnection != null)
+                                {
                                     addChildExtension(sctpConnection,
                                                       extension);
+                                }
                                 else
+                                {
                                     addChildExtension(bundle, extension);
+                                }
                             }
                         }
                     }

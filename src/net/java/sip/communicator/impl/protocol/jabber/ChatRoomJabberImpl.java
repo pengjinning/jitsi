@@ -609,7 +609,7 @@ public class ChatRoomJabberImpl
                 this.provider.getConnection().addPacketListener(
                     presenceListener,
                     new AndFilter(
-                        new FromMatchesFilter(multiUserChat.getRoom()),
+                        FromMatchesFilter.create(multiUserChat.getRoom()),
                         new PacketTypeFilter(
                             org.jivesoftware.smack.packet.Presence.class)));
                 if(password == null)
@@ -868,7 +868,7 @@ public class ChatRoomJabberImpl
 
         clearCachedConferenceDescriptionList();
 
-        XMPPConnection connection = this.provider.getConnection();
+        Connection connection = this.provider.getConnection();
         try
         {
             // if we are already disconnected
@@ -2857,7 +2857,8 @@ public class ChatRoomJabberImpl
                 // room is created and locked till we send
                 // the configuration
                 if (mucUser.getStatus() != null
-                    && "201".equals(mucUser.getStatus().getCode()))
+                    && mucUser.getStatus().contains(
+                        MUCUser.Status.ROOM_CREATED_201))
                 {
                     try
                     {
@@ -2920,25 +2921,26 @@ public class ChatRoomJabberImpl
          */
         private void processOtherPresence(Presence presence)
         {
+            String from = presence.getFrom();
+            String participantName = null;
+            if (from != null)
+            {
+                participantName = StringUtils.parseResource(from);
+            }
+            ChatRoomMemberJabberImpl member
+                = participantName == null ? null : members.get(participantName);
+
             PacketExtension ext
                     = presence.getExtension(
                     ConferenceDescriptionPacketExtension.NAMESPACE);
-            if(presence.isAvailable() && ext != null)
+            if (presence.isAvailable() && ext != null)
             {
                 ConferenceDescriptionPacketExtension cdExt
                         = (ConferenceDescriptionPacketExtension) ext;
 
                 ConferenceDescription cd = cdExt.toConferenceDescription();
 
-                String from = presence.getFrom();
-                String participantName = null;
-                if (from != null)
-                {
-                    participantName = StringUtils.parseResource(from);
-                }
-                ChatRoomMember member = members.get(participantName);
-
-                if(!processConferenceDescription(cd, participantName))
+                if (!processConferenceDescription(cd, participantName))
                     return;
 
                 if (member != null)
@@ -2957,6 +2959,30 @@ public class ChatRoomJabberImpl
                             "unknown member ("+participantName+") in " +
                             multiUserChat.getRoom());
                 }
+            }
+
+            Nick nickExtension
+                = (Nick) presence.getExtension(
+                        Nick.ELEMENT_NAME, Nick.NAMESPACE);
+            if (member != null && nickExtension != null)
+            {
+                member.setDisplayName(nickExtension.getName());
+            }
+
+            Email emailExtension
+                = (Email) presence.getExtension(
+                    Email.ELEMENT_NAME, Email.NAMESPACE);
+            if (member != null && emailExtension != null)
+            {
+                member.setEmail(emailExtension.getAddress());
+            }
+
+            AvatarUrl avatarUrl
+                = (AvatarUrl) presence.getExtension(
+                AvatarUrl.ELEMENT_NAME, AvatarUrl.NAMESPACE);
+            if (member != null && avatarUrl != null)
+            {
+                member.setAvatarUrl(avatarUrl.getAvatarUrl());
             }
         }
     }

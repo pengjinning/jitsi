@@ -93,6 +93,21 @@ public class MediaAwareCallConference
     private RTPTranslator videoRTPTranslator;
 
     /**
+     * The <tt>RTPTranslator</tt> which forwards autio RTP and RTCP traffic
+     * between the <tt>CallPeer</tt>s of the <tt>Call</tt>s participating in
+     * this telephony conference when the local peer is acting as a conference
+     * focus.
+     */
+    private RTPTranslator audioRTPTranslator;
+
+    /**
+     * The indicator which determines whether the telephony conference
+     * represented by this instance is mixing or relaying.
+     * By default what can be mixed is mixed (audio) and rest is relayed.
+     */
+    private boolean translator = false;
+
+    /**
      * Initializes a new <tt>MediaAwareCallConference</tt> instance.
      */
     public MediaAwareCallConference()
@@ -111,7 +126,24 @@ public class MediaAwareCallConference
      */
     public MediaAwareCallConference(boolean jitsiVideobridge)
     {
+        this(jitsiVideobridge, false);
+    }
+
+    /**
+     * Initializes a new <tt>MediaAwareCallConference</tt> instance which is to
+     * optionally utilize the Jitsi Videobridge server-side telephony
+     * conferencing technology.
+     *
+     * @param jitsiVideobridge <tt>true</tt> if the telephony conference
+     * represented by the new instance is to utilize the Jitsi Videobridge
+     * server-side telephony conferencing technology; otherwise, <tt>false</tt>
+     */
+    public MediaAwareCallConference(boolean jitsiVideobridge,
+                                    boolean translator)
+    {
         super(jitsiVideobridge);
+
+        this.translator = translator;
 
         int mediaTypeCount = MediaType.values().length;
 
@@ -219,10 +251,19 @@ public class MediaAwareCallConference
     {
         super.callRemoved(call);
 
-        if (getCallCount() == 0 && (videoRTPTranslator != null))
+        if (getCallCount() == 0)
         {
-            videoRTPTranslator.dispose();
-            videoRTPTranslator = null;
+            if (videoRTPTranslator != null)
+            {
+                videoRTPTranslator.dispose();
+                videoRTPTranslator = null;
+            }
+
+            if (audioRTPTranslator != null)
+            {
+                audioRTPTranslator.dispose();
+                audioRTPTranslator = null;
+            }
         }
     }
 
@@ -269,6 +310,7 @@ public class MediaAwareCallConference
                      * necessary.
                      */
                     if ((!OSUtils.IS_ANDROID || isConferenceFocus())
+                            && !this.translator
                             /*
                              * We can use the AudioMixer only if the device is
                              * able to capture (because the AudioMixer will push
@@ -325,8 +367,6 @@ public class MediaAwareCallConference
      */
     public RTPTranslator getRTPTranslator(MediaType mediaType)
     {
-        RTPTranslator rtpTranslator = null;
-
         /*
          * XXX A mixer is created for audio even when the local peer is not a
          * conference focus in order to enable additional functionality.
@@ -348,9 +388,22 @@ public class MediaAwareCallConference
                         .getMediaService()
                             .createRTPTranslator();
             }
-            rtpTranslator = videoRTPTranslator;
+            return videoRTPTranslator;
         }
-        return rtpTranslator;
+
+        if (this.translator)
+        {
+            if(audioRTPTranslator == null)
+            {
+                audioRTPTranslator
+                    = ProtocolMediaActivator
+                        .getMediaService()
+                            .createRTPTranslator();
+            }
+            return audioRTPTranslator;
+        }
+
+        return null;
     }
 
     /**

@@ -280,7 +280,10 @@ public class OperationSetBasicTelephonyJabberImpl
             Iterable<PacketExtension> sessionInitiateExtensions)
         throws OperationFailedException
     {
-        return createOutgoingCall(call, calleeAddress, null, null);
+        if (calleeAddress.contains("/"))
+            return createOutgoingCall(call, calleeAddress, calleeAddress, null);
+        else
+            return createOutgoingCall(call, calleeAddress, null, null);
     }
 
     /**
@@ -774,7 +777,7 @@ public class OperationSetBasicTelephonyJabberImpl
      */
     private void unsubscribeForJinglePackets()
     {
-        XMPPConnection connection = protocolProvider.getConnection();
+        Connection connection = protocolProvider.getConnection();
 
         if(connection != null)
             connection.removePacketListener(this);
@@ -1120,6 +1123,14 @@ public class OperationSetBasicTelephonyJabberImpl
         else if (action == JingleAction.TRANSPORT_INFO)
         {
             callPeer.processTransportInfo(jingleIQ);
+        }
+        else if (action == JingleAction.SOURCEADD)
+        {
+            callPeer.processSourceAdd(jingleIQ);
+        }
+        else if (action == JingleAction.SOURCEREMOVE)
+        {
+            callPeer.processSourceRemove(jingleIQ);
         }
     }
 

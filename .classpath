@@ -30,7 +30,7 @@
 	<classpathentry kind="lib" path="lib/installer-exclude/hexdump-0.2.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/httpclient-osgi-4.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/httpcore-osgi-4.2.3.jar"/>
-	<classpathentry kind="lib" path="lib/installer-exclude/ice4j-1.1-20160706.192041-13.jar" sourcepath="/ice4j/src/main/java"/>
+	<classpathentry kind="lib" path="lib/installer-exclude/ice4j-2.0-20170330.222540-11.jar" sourcepath="/ice4j/src/main/java"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/sdp-api-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/sip-api-1.2-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/jain-sip-ri-ossonly-1.2.279-jitsi-oss1.jar" sourcepath="/jain-sip/src">
@@ -55,7 +55,7 @@
 			<attribute name="javadoc_location" value="http://dbus.freedesktop.org/doc/dbus-java/api/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/installer-exclude/libjitsi-1.0-20160707.163121-175.jar" sourcepath="/libjitsi/src"/>
+	<classpathentry kind="lib" path="lib/installer-exclude/libjitsi-1.0-20170723.182204-295.jar" sourcepath="/libjitsi/src"/>
 	<classpathentry kind="lib" path="lib/bundle/log4j.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/mac_widgets-0.9.5.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/objenesis-1.2.jar"/>
@@ -66,14 +66,13 @@
 	<classpathentry kind="lib" path="lib/installer-exclude/smackx.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/jna-platform.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/unix-0.5.jar"/>
-	<classpathentry kind="lib" path="lib/installer-exclude/ymsg_network_v0_67.jar"/>
 	<classpathentry kind="lib" path="lib/os-specific/mac/growl4j.jar"/>
 	<classpathentry kind="lib" path="lib/os-specific/mac/OrangeExtensions.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/jmork-1.0.5.jar" sourcepath="/jmork"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/bcprov-jdk15on-1.54.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/commons-lang3-3.1.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/bccontrib-1.0.jar"/>
-	<classpathentry kind="lib" path="lib/installer-exclude/zrtp4j-light.jar"/>
+	<classpathentry kind="lib" path="lib/installer-exclude/zrtp4j-light-4.1.0-jitsi-1-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/jcalendar-1.4.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/hsqldb.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/irc-api-1.0.jar" sourcepath="lib/installer-exclude/irc-api-1.0-sources.jar"/>
@@ -83,5 +82,6 @@
 	<classpathentry kind="lib" path="lib/installer-exclude/google-oauth-client-1.20.0.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/jackson-core-2.5.3.jar"/>
 	<classpathentry kind="lib" path="lib/installer-exclude/dnssecjava-1.1.jar" sourcepath="/dnssecjava"/>
+	<classpathentry kind="lib" path="lib/installer-exclude/gson-2.8.0.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

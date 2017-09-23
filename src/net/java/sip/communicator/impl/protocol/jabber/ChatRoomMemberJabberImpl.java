@@ -54,6 +54,16 @@ public class ChatRoomMemberJabberImpl
     private String nickName;
 
     /**
+     * The email that this member is using inside its containing chat room.
+     */
+    private String email;
+
+    /**
+     * The URL of the avatar of this member.
+     */
+    private String avatarUrl;
+
+    /**
      * The contact from our server stored contact list corresponding to this
      * member.
      */
@@ -63,6 +73,11 @@ public class ChatRoomMemberJabberImpl
      * The avatar of this chat room member.
      */
     private byte[] avatar;
+
+    /**
+     * The display name of this {@link ChatRoomMember}.
+     */
+    private String displayName;
 
     /**
      * Creates a jabber chat room member with the specified containing chat
@@ -269,4 +284,57 @@ public class ChatRoomMemberJabberImpl
          return ((ProtocolProviderServiceJabberImpl) getProtocolProvider())
              .getJabberStatusEnum().getStatus(JabberStatusEnum.AVAILABLE);
      }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDisplayName()
+    {
+        return displayName;
+    }
+
+    /**
+     * Sets the display name of this {@link ChatRoomMember}.
+     * @param displayName the display name to set.
+     */
+    void setDisplayName(String displayName)
+    {
+        this.displayName = displayName;
+    }
+
+    /**
+     * Return the email of this {@link ChatRoomMember}.
+     * @return the email of this {@link ChatRoomMember}.
+     */
+    public String getEmail()
+    {
+        return this.email;
+    }
+
+    /**
+     * Sets the email of this {@link ChatRoomMember}.
+     * @param email the display name to set.
+     */
+    void setEmail(String email)
+    {
+        this.email = email;
+    }
+
+    /**
+     * @return the URL of the avatar of this {@link ChatRoomMember}.
+     */
+    public String getAvatarUrl()
+    {
+        return this.avatarUrl;
+    }
+
+    /**
+     * Sets the avatar URL of this {@link ChatRoomMember}.
+     * @param avatarUrl the value to set.
+     */
+    void setAvatarUrl(String avatarUrl)
+    {
+        this.avatarUrl = avatarUrl;
+    }
 }

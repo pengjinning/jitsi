@@ -489,8 +489,7 @@ public class ChatConversationPanel
             return null;
         }
 
-        String res = new String(net.java.sip.communicator.util.Base64
-            .decode(original_message.toString()));
+        String res = StringEscapeUtils.unescapeXml(original_message.toString());
         // Remove all newline characters that were inserted to make copying
         // newlines from the conversation panel work.
         // They shouldn't be in the write panel, because otherwise a newline
@@ -790,8 +789,6 @@ public class ChatConversationPanel
      */
     public void correctMessage(final ChatMessage chatMessage)
     {
-        lastMessageUID = chatMessage.getMessageUID();
-
         if (!SwingUtilities.isEventDispatchThread())
         {
             SwingUtilities.invokeLater(new Runnable()
@@ -805,6 +802,11 @@ public class ChatConversationPanel
         }
 
         String correctedUID = chatMessage.getCorrectedMessageUID();
+        if (correctedUID != null && correctedUID.equals(lastMessageUID))
+        {
+            lastMessageUID = chatMessage.getMessageUID();
+        }
+
         Element root = document.getDefaultRootElement();
         Element correctedMsgElement
             = document.getElement(root,

@@ -6,7 +6,7 @@ Uploaders: Emil Ivov <emcho@jitsi.org>, Damian Minkov <damencho@jitsi.org>
 Homepage: _APP_WEB_
 Build-Depends: debhelper (>= 9), javahelper,
                dpkg-dev (>= 1.16.1),
-               default-jdk,
+               default-jdk | java7-sdk,
                ant,
                ant-optional,
                ant-contrib-cpptasks,
@@ -47,8 +47,6 @@ Build-Depends: debhelper (>= 9), javahelper,
                libglib2.0-dev,
                libguava-java,
                libhsqldb-java,
-               glassfish-activation,
-               glassfish-mail,
                libjcalendar-java,
                libphonenumber6-java,
                libslf4j-java
@@ -61,7 +59,8 @@ Depends: ${misc:Depends},
          _PACKAGE_NAME_-common (= ${source:Version}),
          libjitsi (= ${libjitsi:version}),
          libjitsi-jni (= ${libjitsi:version}),
-         default-jre,
+         default-jre | java7-runtime,
+         libappindicator1,
          libunixsocket-java,
          libhttpcore-java,
          liblog4j1.2-java,
@@ -110,7 +109,7 @@ Package: _PACKAGE_NAME_-common
 Section: libs
 Architecture: all
 Depends: ${misc:Depends}, ${shlibs:Depends},
-         libdnsjava-java (>= 2.1.7~),
+         libdnsjava-java (>= 2.1.7),
          libxpp3-java,
          libjzlib-java,
          libbcpkix-java

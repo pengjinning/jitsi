@@ -62,6 +62,13 @@ public class JibriIqProvider
                 = parser.getAttributeValue("", JibriIq.STATUS_ATTR_NAME);
             iq.setStatus(JibriIq.Status.parse(status));
 
+            String recordingMode
+                = parser.getAttributeValue(
+                        "", JibriIq.RECORDING_MODE_ATTR_NAME);
+            if (!StringUtils.isNullOrEmpty(recordingMode))
+                iq.setRecordingMode(
+                        JibriIq.RecordingMode.parse(recordingMode));
+
             String room
                 = parser.getAttributeValue("", JibriIq.ROOM_ATTR_NAME);
             if (!StringUtils.isNullOrEmpty(room))
@@ -71,6 +78,16 @@ public class JibriIqProvider
                 = parser.getAttributeValue("", JibriIq.STREAM_ID_ATTR_NAME);
             if (!StringUtils.isNullOrEmpty(streamId))
                 iq.setStreamId(streamId);
+
+            String displayName
+                = parser.getAttributeValue("", JibriIq.DISPLAY_NAME_ATTR_NAME);
+            if (!StringUtils.isNullOrEmpty(displayName))
+                iq.setDisplayName(displayName);
+
+            String sipAddress
+                = parser.getAttributeValue("", JibriIq.SIP_ADDRESS_ATTR_NAME);
+            if (!StringUtils.isNullOrEmpty(sipAddress))
+                iq.setSipAddress(sipAddress);
         }
         else
         {

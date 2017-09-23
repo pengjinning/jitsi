@@ -28,6 +28,9 @@ import org.jitsi.util.*;
 import org.osgi.framework.*;
 
 import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
+import java.util.*;
 
 /**
  *
@@ -37,6 +40,10 @@ import java.io.*;
 public class ConfigurationActivator
     implements BundleActivator
 {
+    /** Property name to force a properties file based configuration. */
+    public static final String PNAME_USE_PROPFILE_CONFIG = 
+        "net.java.sip.communicator.impl.configuration.USE_PROPFILE_CONFIG";
+
     /**
      * The <tt>Logger</tt> used by the <tt>ConfigurationActivator</tt> class
      * for logging output.
@@ -59,44 +66,18 @@ public class ConfigurationActivator
     public void start(BundleContext bundleContext)
         throws Exception
     {
-        FileAccessService fas
-            = ServiceUtils.getService(bundleContext, FileAccessService.class);
-
-        if (fas != null)
+        if (usePropFileConfigService(bundleContext))
         {
-            File useDatabaseConfig;
-
-            try
-            {
-                useDatabaseConfig
-                    = fas.getPrivatePersistentFile(
-                            ".usedatabaseconfig",
-                            FileCategory.PROFILE);
-            }
-            catch (Exception ise)
-            {
-
-                // There is somewhat of a chicken-and-egg dependency between
-                // FileConfigurationServiceImpl and ConfigurationServiceImpl:
-                // FileConfigurationServiceImpl throws IllegalStateException if
-                // certain System properties are not set,
-                // ConfigurationServiceImpl will make sure that these properties
-                //are set but it will do that later.
-                // A SecurityException is thrown when the destination
-                // is not writable or we do not have access to that folder
-                useDatabaseConfig = null;
-            }
-
-            // BETA: if the marker file exists, use the database configuration
-            if ((useDatabaseConfig != null) && useDatabaseConfig.exists())
-            {
-                logger.info("Using database configuration store.");
-                this.cs = new JdbcConfigService(fas);
-            }
-        }
-
-        if (this.cs == null)
+            logger.info("Using properties file configuration store.");
             this.cs = LibJitsi.getConfigurationService();
+        }
+        else
+        {
+            this.cs = new JdbcConfigService(
+                ServiceUtils.getService(
+                    bundleContext,
+                    FileAccessService.class));
+        }
 
         bundleContext.registerService(
                 ConfigurationService.class.getName(),
@@ -104,6 +85,42 @@ public class ConfigurationActivator
                 null);
 
         fixPermissions(this.cs);
+    }
+
+    private boolean usePropFileConfigService(BundleContext bundleContext)
+    {
+        if (Boolean.getBoolean(PNAME_USE_PROPFILE_CONFIG))
+        {
+            return true;
+        }
+
+        FileAccessService fas
+            = ServiceUtils.getService(bundleContext, FileAccessService.class);
+
+        if (fas == null)
+        {
+            return true;
+        }
+
+        try
+        {
+            return fas.getPrivatePersistentFile(
+                    ".usepropfileconfig",
+                    FileCategory.PROFILE
+                ).exists();
+        }
+        catch (Exception ise)
+        {
+            // There is somewhat of a chicken-and-egg dependency between
+            // FileConfigurationServiceImpl and ConfigurationServiceImpl:
+            // FileConfigurationServiceImpl throws IllegalStateException if
+            // certain System properties are not set,
+            // ConfigurationServiceImpl will make sure that these properties
+            // are set but it will do that later.
+            // A SecurityException is thrown when the destination
+            // is not writable or we do not have access to that folder
+            return true;
+        }
     }
 
     /**
@@ -139,17 +156,30 @@ public class ConfigurationActivator
             // let's check config file and config folder
             File homeFolder
                 = new File(cs.getScHomeDirLocation(), cs.getScHomeDirName());
-            CLibrary  libc = (CLibrary) Native.loadLibrary("c", CLibrary.class);
-
-            libc.chmod(homeFolder.getAbsolutePath(), 0700);
+            Set<PosixFilePermission> perms =
+                new HashSet<PosixFilePermission>()
+                {{
+                    add(PosixFilePermission.OWNER_READ);
+                    add(PosixFilePermission.OWNER_WRITE);
+                    add(PosixFilePermission.OWNER_EXECUTE);
+                }};
+                Files.setPosixFilePermissions(
+                    Paths.get(homeFolder.getAbsolutePath()), perms);
 
             String fileName = cs.getConfigurationFilename();
-
             if(fileName != null)
             {
                 File cf = new File(homeFolder, fileName);
                 if(cf.exists())
-                    libc.chmod(cf.getAbsolutePath(), 0600);
+                {
+                    perms = new HashSet<PosixFilePermission>()
+                        {{
+                            add(PosixFilePermission.OWNER_READ);
+                            add(PosixFilePermission.OWNER_WRITE);
+                        }};
+                    Files.setPosixFilePermissions(
+                        Paths.get(cf.getAbsolutePath()), perms);
+                }
             }
         }
         catch(Throwable t)
@@ -163,25 +193,5 @@ public class ConfigurationActivator
             else if (t instanceof ThreadDeath)
                 throw (ThreadDeath) t;
         }
-    }
-
-    /**
-     * The JNA interface to the <tt>c</tt> library and the <tt>chmod</tt>
-     * function we use to fix permissions of user files and folders.
-     */
-    public interface CLibrary
-        extends Library
-    {
-        /**
-         * Changes file permissions.
-         *
-         * @param path the path to the file or folder the permissions of which
-         * are to be changed.
-         * @param mode the mode operand
-         * @return <tt>0</tt> upon successful completion; otherwise,
-         * <tt>-1</tt>. If <tt>-1</tt> is returned, no change to the file mode
-         * occurs.
-         */
-        public int chmod(String path, int mode);
     }
 }

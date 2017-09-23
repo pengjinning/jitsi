@@ -52,6 +52,13 @@ public class JibriIq
     public static final String ACTION_ATTR_NAME = "action";
 
     /**
+     * The name of XML attribute name which holds the display name which will be
+     * used by Jibri participant when it enters Jitsi Meet conference.
+     * The value is "displayname".
+     */
+    static final String DISPLAY_NAME_ATTR_NAME = "displayname";
+
+    /**
      * XML element name of the Jibri IQ.
      */
     public static final String ELEMENT_NAME = "jibri";
@@ -62,6 +69,12 @@ public class JibriIq
     public static final String NAMESPACE = "http://jitsi.org/protocol/jibri";
 
     /**
+     * The name of XML attribute which stores SIP address. The value is
+     * "sipaddress".
+     */
+    static final String SIP_ADDRESS_ATTR_NAME = "sipaddress";
+
+    /**
      * The name of XML attribute which stores the recording status.
      */
     static final String STATUS_ATTR_NAME = "status";
@@ -70,6 +83,19 @@ public class JibriIq
      * The name of XML attribute which stores the stream id.
      */
     static final String STREAM_ID_ATTR_NAME = "streamid";
+
+    /**
+     * The name of XML attribute which stores the recording mode which can be
+     * either 'stream' or 'file'. If the attribute is not present, but
+     * {@link #STREAM_ID_ATTR_NAME} is, then it defaults to 'stream'. But if
+     * the {@link #STREAM_ID_ATTR_NAME} is not present then it defaults to
+     * 'file'. Note that the defaults logic is handled on Jicofo level rather
+     * than this packet's extension implementation.
+     *
+     * In the 'stream' mode Jibri live streams the conference recording.
+     * The 'file' mode makes Jibri write the recording to a file.
+     */
+    static final String RECORDING_MODE_ATTR_NAME = "recording_mode";
 
     /**
      * The name of XML attribute which stores the name of the conference room to
@@ -83,9 +109,24 @@ public class JibriIq
     private Action action = Action.UNDEFINED;
 
     /**
+     * The display name which will be used by Jibri participant.
+     */
+    private String displayName;
+
+    /**
      * XMPPError stores error details for {@link Status#FAILED}.
      */
     private XMPPError error;
+
+    /**
+     * The recording mode. See {@link #RECORDING_MODE_ATTR_NAME}.
+     */
+    private RecordingMode recordingMode = RecordingMode.UNDEFINED;
+
+    /**
+     * The SIP address of remote peer.
+     */
+    private String sipAddress;
 
     /**
      * Holds recording status.
@@ -102,6 +143,40 @@ public class JibriIq
      * The name of the conference room to be recorded.
      */
     private String room = null;
+
+    /**
+     * @return the value for {@link #DISPLAY_NAME_ATTR_NAME}
+     */
+    public String getDisplayName()
+    {
+        return displayName;
+    }
+
+    /**
+     * Sets new value for {@link #DISPLAY_NAME_ATTR_NAME}
+     * @param displayName the new display name to be set
+     */
+    public void setDisplayName(String displayName)
+    {
+        this.displayName = displayName;
+    }
+
+    /**
+     * @return the value for {@link #SIP_ADDRESS_ATTR_NAME}
+     */
+    public String getSipAddress()
+    {
+        return this.sipAddress;
+    }
+
+    /**
+     * Sets new value for {@link #SIP_ADDRESS_ATTR_NAME}
+     * @param sipAddress the new SIP address to be set
+     */
+    public void setSipAddress(String sipAddress)
+    {
+        this.sipAddress = sipAddress;
+    }
 
     /**
      * Returns the value of {@link #STREAM_ID_ATTR_NAME} attribute.
@@ -166,6 +241,12 @@ public class JibriIq
             printStringAttribute(xml, STATUS_ATTR_NAME, status.toString());
         }
 
+        if (recordingMode != RecordingMode.UNDEFINED)
+        {
+            printStringAttribute(
+                    xml, RECORDING_MODE_ATTR_NAME, recordingMode.toString());
+        }
+
         if (room != null)
         {
             printStringAttribute(xml, ROOM_ATTR_NAME, room);
@@ -174,6 +255,16 @@ public class JibriIq
         if (streamId != null)
         {
             printStringAttribute(xml, STREAM_ID_ATTR_NAME, streamId);
+        }
+
+        if (displayName != null)
+        {
+            printStringAttribute(xml, DISPLAY_NAME_ATTR_NAME, displayName);
+        }
+
+        if (sipAddress != null)
+        {
+            printStringAttribute(xml, SIP_ADDRESS_ATTR_NAME, sipAddress);
         }
 
         Collection<PacketExtension> extensions =  getExtensions();
@@ -221,6 +312,27 @@ public class JibriIq
     public Action getAction()
     {
         return action;
+    }
+
+    /**
+     * Returns the value of 'recording_mode' attribute.
+     * @see JibriIq#RECORDING_MODE_ATTR_NAME
+     */
+    public RecordingMode getRecordingMode()
+    {
+        return recordingMode;
+    }
+
+    /**
+     * Sets the value of 'recording_mode' attribute.
+     * @param mode the new value to set as the recording mode attribute of this
+     *             IQ instance.
+     *
+     * @see JibriIq#RECORDING_MODE_ATTR_NAME
+     */
+    public void setRecordingMode(RecordingMode mode)
+    {
+        this.recordingMode = mode;
     }
 
     /**
@@ -322,6 +434,76 @@ public class JibriIq
     }
 
     /**
+     * Enumerates available recording modes stored under
+     * {@link #RECORDING_MODE_ATTR_NAME}.
+     */
+    public enum RecordingMode
+    {
+        /**
+         * Jibri records to file.
+         */
+        FILE("file"),
+
+        /**
+         * Jibri live streaming mode.
+         */
+        STREAM("stream"),
+
+        /**
+         * No valid value specified.
+         */
+        UNDEFINED("undefined");
+
+        /**
+         * Recording mode name holder.
+         */
+        private String mode;
+
+        /**
+         * Creates new {@link RecordingMode} instance.
+         * @param mode a string corresponding to one of {@link RecordingMode}
+         *             values.
+         */
+        RecordingMode(String mode)
+        {
+            this.mode = mode;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString()
+        {
+            return mode;
+        }
+
+        /**
+         * Parses <tt>RecordingMode</tt> from given string.
+         *
+         * @param status the string representation of <tt>RecordingMode</tt>.
+         *
+         * @return <tt>RecordingMode</tt> value for given string or
+         *         {@link #UNDEFINED} if given string does not
+         *         reflect any of valid values.
+         */
+        public static RecordingMode parse(String status)
+        {
+            if (StringUtils.isNullOrEmpty(status))
+                return UNDEFINED;
+
+            try
+            {
+                return RecordingMode.valueOf(status.toUpperCase());
+            }
+            catch(IllegalArgumentException e)
+            {
+                return UNDEFINED;
+            }
+        }
+    }
+
+    /**
      * The enumeration of recording status values.
      */
     public enum Status
@@ -361,7 +543,17 @@ public class JibriIq
         /**
          * Unknown/uninitialized.
          */
-        UNDEFINED("undefined");
+        UNDEFINED("undefined"),
+
+        /**
+         * Used by {@link SipGatewayStatus} to signal that there are Jibris
+         * available. SIP gateway does not use ON, OFF, PENDING nor RETRYING
+         * states, because gateway availability and each SIP call's states are
+         * signalled separately.
+         * Check {@link SipGatewayStatus} and {@link SipCallState} for more
+         * info.
+         */
+        AVAILABLE("available");
 
         /**
          * Status name holder.
